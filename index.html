@@ -1,55 +1,68 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Erasmus AR Project</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #ar-ui {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            text-align: center;
-            width: 90%;
+        /* Pulsante enorme e centrato */
+        #overlay {
+            position: fixed; bottom: 0; left: 0; right: 0; padding: 30px;
+            background: rgba(0,0,0,0.8); z-index: 999; text-align: center;
         }
-        #start-btn {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            font-weight: bold;
+        button {
+            width: 100%; padding: 25px; font-size: 22px; font-weight: bold;
+            background: #27ae60; color: white; border: none; border-radius: 15px;
         }
     </style>
 </head>
 
-<body>
-    <div id="ar-ui">
-        <button id="start-btn">1. CLICCA PER ATTIVARE AUDIO/VIDEO</button>
+<body style="margin: 0; overflow: hidden;">
+    <div id="overlay">
+        <button id="btn">PREMI PER ATTIVARE AR</button>
     </div>
 
-    <a-scene 
-        embedded 
-        arjs="sourceType: webcam; debugUIEnabled: false;" 
-        renderer="logarithmicDepthBuffer: true; colorManagement: true;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
         
         <a-assets>
-            <video id="vid-it" src="video_it.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
-            <video id="vid-fr" src="video_fr.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <video id="v-fr" src="video_fr.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
         </a-assets>
 
-        <a-marker preset="hiro" id="marker-it">
-            <a-video src="#vid-it" width="1.6" height="0.9" position="0 0.1 0" rotation="-90 0 0"></a-video>
+        <a-marker preset="hiro">
+            <a-video src="#v-it" width="2.5" height="1.4" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
-        <a-marker preset="kanji" id="marker-fr">
-            <a-video src="#vid-fr" width="1.6" height="0.9"
+        <a-marker preset="kanji">
+            <a-video src="#v-fr" width="2.5" height="1.4" position="0 0.2 0" rotation="-90 0 0"></a-video>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        const btn = document.querySelector('#btn');
+        const vIt = document.querySelector('#v-it');
+        const vFr = document.querySelector('#v-fr');
+
+        btn.addEventListener('click', () => {
+            // Sblocco forzato
+            vIt.play(); vIt.pause();
+            vFr.play(); vFr.pause();
+            document.querySelector('#overlay').style.display = 'none';
+        });
+
+        // Gestione automatica Play/Pause al riconoscimento del marker
+        document.querySelectorAll('a-marker').forEach(m => {
+            m.addEventListener('markerFound', () => {
+                const target = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                target.play();
+            });
+            m.addEventListener('markerLost', () => {
+                const target = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                target.pause();
+            });
+        });
+    </script>
+</body>
+</html>
