@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
-        /* Pulsante enorme e centrato */
         #overlay {
-            position: fixed; bottom: 0; left: 0; right: 0; padding: 30px;
-            background: rgba(0,0,0,0.8); z-index: 999; text-align: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
         }
         button {
-            width: 100%; padding: 25px; font-size: 22px; font-weight: bold;
-            background: #27ae60; color: white; border: none; border-radius: 15px;
+            padding: 20px 40px; font-size: 20px; font-weight: bold;
+            background: #27ae60; color: white; border: none; border-radius: 10px;
         }
     </style>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
     <div id="overlay">
-        <button id="btn">PREMI PER ATTIVARE AR</button>
+        <button id="btn">AVVIA ESPERIENZA AR</button>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
+    <a-scene embedded 
+             arjs="sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;" 
+             vr-mode-ui="enabled: false"
+             renderer="logarithmicDepthBuffer: true; precision: medium;">
         
         <a-assets>
             <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
@@ -30,11 +33,11 @@
         </a-assets>
 
         <a-marker preset="hiro">
-            <a-video src="#v-it" width="2.5" height="1.4" position="0 0.2 0" rotation="-90 0 0"></a-video>
+            <a-video src="#v-it" width="1.6" height="0.9" position="0 0.5 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-marker preset="kanji">
-            <a-video src="#v-fr" width="2.5" height="1.4" position="0 0.2 0" rotation="-90 0 0"></a-video>
+            <a-video src="#v-fr" width="1.6" height="0.9" position="0 0.5 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -46,21 +49,20 @@
         const vFr = document.querySelector('#v-fr');
 
         btn.addEventListener('click', () => {
-            // Sblocco forzato
-            vIt.play(); vIt.pause();
+            vIt.play(); vIt.pause(); // Sblocco audio
             vFr.play(); vFr.pause();
             document.querySelector('#overlay').style.display = 'none';
         });
 
-        // Gestione automatica Play/Pause al riconoscimento del marker
+        // Forza il play solo quando il marker è visto
         document.querySelectorAll('a-marker').forEach(m => {
             m.addEventListener('markerFound', () => {
-                const target = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
-                target.play();
+                const vid = (m.id === 'marker-it' || m.getAttribute('preset') === 'hiro') ? vIt : vFr;
+                vid.play();
             });
             m.addEventListener('markerLost', () => {
-                const target = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
-                target.pause();
+                const vid = (m.id === 'marker-it' || m.getAttribute('preset') === 'hiro') ? vIt : vFr;
+                vid.pause();
             });
         });
     </script>
