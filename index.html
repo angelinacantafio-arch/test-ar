@@ -9,49 +9,59 @@
     
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #000; }
+        
+        /* Header con bandierine */
         #header {
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
             z-index: 10000; display: flex; align-items: center; gap: 15px;
-            background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 50px;
+            background: rgba(255,255,255,0.95); padding: 10px 20px; border-radius: 50px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 85%; max-width: 400px; justify-content: center;
         }
-        .flag { font-size: 30px; }
-        #title { font-weight: bold; color: #003399; font-size: 14px; text-transform: uppercase; }
+        .flag { font-size: 24px; }
+        #title { font-weight: bold; color: #003399; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
 
+        /* Overlay di avvio */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 9999;
             display: flex; align-items: center; justify-content: center;
-            flex-direction: column; color: white;
+            flex-direction: column; color: white; transition: opacity 0.5s;
         }
         #start-btn {
-            background: #27ae60; color: white; border: none; padding: 25px 40px;
+            background: #27ae60; color: white; border: none; padding: 20px 40px;
             font-size: 20px; border-radius: 50px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
         }
     </style>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
+
     <div id="header">
-        <span class="flag">🇮🇹</span><span id="title">Gusto Aumentato</span><span class="flag">🇫🇷</span>
+        <span class="flag">🇮🇹</span>
+        <span id="title">Gusto Aumentato AR</span>
+        <span class="flag">🇫🇷</span>
     </div>
 
     <div id="overlay">
-        <button id="start-btn">ATTIVA FOTOCAMERA E AUDIO</button>
-        <p style="margin-top:20px; opacity:0.7;">Inquadra i marker dopo aver cliccato</p>
+        <button id="start-btn">ENTRA NELL'ESPERIENZA</button>
+        <p style="margin-top:20px; opacity:0.7; text-align:center; padding:0 20px;">
+            Clicca per attivare, poi inquadra il prodotto
+        </p>
     </div>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
+        
         <a-assets>
-            <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
-            <video id="v-fr" src="video_fr.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+            <video id="v-fr" src="video_fr.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
         </a-assets>
 
-        <a-marker preset="hiro">
+        <a-marker preset="hiro" id="marker-it">
             <a-video src="#v-it" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
-        <a-marker preset="kanji">
+        <a-marker preset="kanji" id="marker-fr">
             <a-video src="#v-fr" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
@@ -60,30 +70,35 @@
 
     <script>
         const btn = document.querySelector('#start-btn');
+        const overlay = document.querySelector('#overlay');
         const vIt = document.querySelector('#v-it');
         const vFr = document.querySelector('#v-fr');
+        
+        let experienceStarted = false;
 
         btn.addEventListener('click', () => {
-            // TRUCCO: Avviamo i video muti e poi ridiamo volume
-            // Questo "sveglia" il motore audio del browser
+            // Sblocco i video: li avvio muti e li metto in pausa, poi tolgo il mute
+            // Questo dice al browser: "L'utente ha autorizzato il suono"
             [vIt, vFr].forEach(v => {
-                v.muted = true;
                 v.play().then(() => {
                     v.pause();
-                    v.muted = false;
+                    v.muted = false; 
                     v.currentTime = 0;
                 });
             });
-            document.querySelector('#overlay').style.display = 'none';
+            
+            experienceStarted = true;
+            overlay.style.display = 'none';
         });
 
-        // Riproduzione fluida basata sul marker
+        // Gestione Marker: partono solo se l'esperienza è stata avviata col click
         document.querySelectorAll('a-marker').forEach(m => {
             m.addEventListener('markerFound', () => {
+                if (!experienceStarted) return;
                 const vid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
-                vid.muted = false; // Assicuriamoci che non sia muto
                 vid.play();
             });
+            
             m.addEventListener('markerLost', () => {
                 const vid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
                 vid.pause();
