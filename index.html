@@ -1,31 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Erasmus+ AR: Gusto Aumentato 🇮🇹 🇫🇷</title>
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    
     <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #000; }
+        
+        /* Intestazione con Bandierine */
+        #header {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; display: flex; align-items: center; gap: 15px;
+            background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 85%; max-width: 400px;
+            justify-content: center;
+        }
+        .flag { font-size: 30px; }
+        #title { font-weight: bold; color: #003399; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Pannello di avvio enorme */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 9999;
+            background: rgba(0,0,0,0.85); z-index: 9999;
             display: flex; align-items: center; justify-content: center;
+            flex-direction: column; color: white; transition: opacity 0.5s;
         }
-        button {
-            padding: 20px 40px; font-size: 20px; font-weight: bold;
-            background: #27ae60; color: white; border: none; border-radius: 10px;
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+        
+        #start-btn {
+            background: linear-gradient(135deg, #003399 0%, #0055cc 100%); /* Colori Erasmus */
+            color: white; border: none; padding: 25px 50px; font-size: 22px;
+            border-radius: 50px; cursor: pointer; box-shadow: 0 5px 20px rgba(0,51,153,0.5);
+            font-weight: bold; text-transform: uppercase; letter-spacing: 1px; width: 80%;
         }
+        #instructions { margin-top: 20px; font-size: 16px; opacity: 0.8; text-align: center; max-width: 80%; }
     </style>
 </head>
 
-<body style="margin: 0; overflow: hidden;">
+<body>
+    <div id="header">
+        <span class="flag">🇮🇹</span>
+        <span id="title">Gusto Aumentato AR</span>
+        <span class="flag">🇫🇷</span>
+    </div>
+
     <div id="overlay">
-        <button id="btn">AVVIA ESPERIENZA AR</button>
+        <button id="start-btn">AVVIA L'ESPERIENZA</button>
+        <div id="instructions">Premi il pulsante per attivare la fotocamera e l'audio. Poi inquadra il marker del prodotto.</div>
     </div>
 
     <a-scene embedded 
              arjs="sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;" 
              vr-mode-ui="enabled: false"
-             renderer="logarithmicDepthBuffer: true; precision: medium;">
+             renderer="logarithmicDepthBuffer: true; precision: medium; colorManagement: true;">
         
         <a-assets>
             <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
@@ -33,36 +64,38 @@
         </a-assets>
 
         <a-marker preset="hiro">
-            <a-video src="#v-it" width="1.6" height="0.9" position="0 0.5 0" rotation="-90 0 0"></a-video>
+            <a-video src="#v-it" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-marker preset="kanji">
-            <a-video src="#v-fr" width="1.6" height="0.9" position="0 0.5 0" rotation="-90 0 0"></a-video>
+            <a-video src="#v-fr" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-        const btn = document.querySelector('#btn');
+        const btn = document.querySelector('#start-btn');
+        const overlay = document.querySelector('#overlay');
         const vIt = document.querySelector('#v-it');
         const vFr = document.querySelector('#v-fr');
 
+        // Sblocco audio e nascondi overlay
         btn.addEventListener('click', () => {
-            vIt.play(); vIt.pause(); // Sblocco audio
-            vFr.play(); vFr.pause();
-            document.querySelector('#overlay').style.display = 'none';
+            vIt.play().then(() => vIt.pause()); // Sblocco tecnico
+            vFr.play().then(() => vFr.pause());
+            overlay.classList.add('hidden');
         });
 
-        // Forza il play solo quando il marker è visto
+        // Gestione automatica intelligente (evita sovrapposizione audio)
         document.querySelectorAll('a-marker').forEach(m => {
             m.addEventListener('markerFound', () => {
-                const vid = (m.id === 'marker-it' || m.getAttribute('preset') === 'hiro') ? vIt : vFr;
-                vid.play();
+                const targetVid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                targetVid.play();
             });
             m.addEventListener('markerLost', () => {
-                const vid = (m.id === 'marker-it' || m.getAttribute('preset') === 'hiro') ? vIt : vFr;
-                vid.pause();
+                const targetVid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                targetVid.pause();
             });
         });
     </script>
