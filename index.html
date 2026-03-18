@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>Erasmus+ AR: Gusto Aumentato 🇮🇹 🇫🇷</title>
+    <title>Erasmus+ AR: Gusto Aumentato + Saluti 🇮🇹 🇫🇷</title>
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
@@ -13,12 +14,12 @@
         /* Header con bandierine */
         #header {
             position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-            z-index: 10000; display: flex; align-items: center; gap: 15px;
-            background: rgba(255,255,255,0.95); padding: 10px 20px; border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 85%; max-width: 400px; justify-content: center;
+            z-index: 10000; display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.95); padding: 8px 15px; border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); width: auto; max-width: 90%; justify-content: center;
         }
-        .flag { font-size: 24px; }
-        #title { font-weight: bold; color: #003399; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .flag { font-size: 22px; }
+        #title { font-weight: bold; color: #003399; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Overlay di avvio */
         #overlay {
@@ -30,7 +31,7 @@
         #start-btn {
             background: #27ae60; color: white; border: none; padding: 20px 40px;
             font-size: 20px; border-radius: 50px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
+            box-shadow: 0 0 20px rgba(39, 174, 96, 0.5); text-transform: uppercase;
         }
     </style>
 </head>
@@ -44,17 +45,18 @@
     </div>
 
     <div id="overlay">
-        <button id="start-btn">ENTRA NELL'ESPERIENZA</button>
-        <p style="margin-top:20px; opacity:0.7; text-align:center; padding:0 20px;">
-            Clicca per attivare, poi inquadra il prodotto
+        <button id="start-btn">AVVIA ESPERIENZA</button>
+        <p style="margin-top:20px; opacity:0.7; text-align:center; padding:0 20px; font-size:14px;">
+            Clicca per attivare, poi inquadra i prodotti o il marker saluti.
         </p>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; colorManagement: true;">
         
         <a-assets>
             <video id="v-it" src="video_it.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
             <video id="v-fr" src="video_fr.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+            <video id="v-saluti" src="video_saluti.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
         </a-assets>
 
         <a-marker preset="hiro" id="marker-it">
@@ -63,6 +65,10 @@
 
         <a-marker preset="kanji" id="marker-fr">
             <a-video src="#v-fr" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
+        </a-marker>
+        
+        <a-marker type="pattern" url="saluti.patt" id="marker-saluti">
+            <a-video src="#v-saluti" width="1.6" height="0.9" position="0 0.2 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -73,13 +79,14 @@
         const overlay = document.querySelector('#overlay');
         const vIt = document.querySelector('#v-it');
         const vFr = document.querySelector('#v-fr');
+        const vSaluti = document.querySelector('#v-saluti');
         
+        const videos = [vIt, vFr, vSaluti];
         let experienceStarted = false;
 
         btn.addEventListener('click', () => {
-            // Sblocco i video: li avvio muti e li metto in pausa, poi tolgo il mute
-            // Questo dice al browser: "L'utente ha autorizzato il suono"
-            [vIt, vFr].forEach(v => {
+            // Sblocco audio forzato per tutti i video
+            videos.forEach(v => {
                 v.play().then(() => {
                     v.pause();
                     v.muted = false; 
@@ -91,16 +98,22 @@
             overlay.style.display = 'none';
         });
 
-        // Gestione Marker: partono solo se l'esperienza è stata avviata col click
+        // Gestione Marker intelligente (Play solo se l'utente ha cliccato e per il video corretto)
         document.querySelectorAll('a-marker').forEach(m => {
             m.addEventListener('markerFound', () => {
                 if (!experienceStarted) return;
-                const vid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                
+                // Capisce quale video far partire in base al marker trovato
+                let vid;
+                if(m.id === 'marker-it') vid = vIt;
+                else if(m.id === 'marker-fr') vid = vFr;
+                else if(m.id === 'marker-saluti') vid = vSaluti;
+                
                 vid.play();
             });
             
             m.addEventListener('markerLost', () => {
-                const vid = m.getAttribute('preset') === 'hiro' ? vIt : vFr;
+                const vid = (m.id === 'marker-it') ? vIt : (m.id === 'marker-fr' ? vFr : vSaluti);
                 vid.pause();
             });
         });
